@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useQuestions } from '@/hooks/useQuestions';
+import { useSolvedQuestions } from '@/hooks/useSolvedQuestions';
 import QuestionCard from '@/components/QuestionCard';
 import { QuestionType } from '@/types';
 import { ArrowLeft, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
@@ -21,6 +22,7 @@ export default function QuestionDetail() {
   const params = useParams();
   const router = useRouter();
   const { data } = useQuestions();
+  const { markSolved, isSolved } = useSolvedQuestions();
   const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]);
   const [showExplanation, setShowExplanation] = useState(false);
 
@@ -69,10 +71,11 @@ export default function QuestionDetail() {
     selectedAnswers.every(a => currentQuestion?.correct_answers.includes(a));
 
   useEffect(() => {
-    if (!isCorrect) return;
+    if (!isCorrect || !currentQuestion) return;
+    markSolved(currentQuestion.id);
     const t = setTimeout(goNext, 2000);
     return () => clearTimeout(t);
-  }, [isCorrect, goNext]);
+  }, [isCorrect, goNext, markSolved, currentQuestion]);
 
   // 키보드 단축키
   useEffect(() => {
@@ -133,6 +136,12 @@ export default function QuestionDetail() {
           </Link>
           <div className="text-center">
             <p className="text-xs text-zinc-500">{TYPE_LABELS[questionType]}</p>
+            <p className="text-xs text-zinc-700 mt-0.5">
+              {currentIndex + 1} / {typeQuestions.length}
+              {isSolved(currentQuestion.id) && (
+                <span className="ml-2 text-emerald-600">✓ 완료</span>
+              )}
+            </p>
           </div>
           <button
             onClick={reset}
